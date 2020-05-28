@@ -128,8 +128,9 @@ def get_stock_history(code, pageNum):
 
     """
     stockHistory = []
-    for i in range(1, pageNum+1):
-        url = "https://finance.naver.com/item/sise_day.nhn?code={}&page={}".format(code, i)
+    for i in range(pageNum+1):
+        print("주가 데이터 크롤링 : {} 진행 중".format(pageNum-i))
+        url = "https://finance.naver.com/item/sise_day.nhn?code={}&page={}".format(code, pageNum-i)
         html = requests.get(url).text
         soup = BeautifulSoup(html, "html5lib")
 
