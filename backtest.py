@@ -22,7 +22,7 @@ def insertStockInfo(df_stock_code):
     conn.commit()
     conn.close()
 
-def selectAllStockInfo():
+def select_all_stock_info():
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
                            db='quant', charset='utf8')
 
@@ -35,32 +35,23 @@ def selectAllStockInfo():
 
     # SQL문 실행
     curs.execute(sql)
-
-    # 데이타 Fetch
-    rows = curs.fetchall()
-    for row in rows:
-        print(row)
-        print(row['stock_code'])
-        result = webreader.get_stock_history(row['stock_code'], 10)
-        print(result)
-
-        insertStockHistory(row['stock_code'], result)
-
+    all_stock_list = curs.fetchall()
     conn.close()
 
-def insertStockHistory(stock_code, stock_history):
+    return all_stock_list
+
+def insert_stock_history(stock_code, stock_history):
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
                            db='quant', charset='utf8')
-
     curs = conn.cursor()
-    sql = """insert into STOCK_HISTORY(stock_code,date,close,diff,open,high,low,volume)
-             values (%s, %s, %s, %s, %s, %s, %s, %s)"""
+    sql = """insert into STOCK_HISTORY(stock_code,date,open,high,low,close,volume)
+             values (%s, %s, %s, %s, %s, %s, %s)"""
 
     for row in stock_history:
-        curs.execute(sql, (stock_code, row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
+        # print(row)
+        curs.execute(sql, (stock_code, row[0], row[1], row[2], row[3], row[4], row[5]))
 
-
-    print("종목 히스토리 INSERT 끝")
+    print("{} ::: 종목 히스토리 INSERT 끝".format(str(stock_code)))
 
     conn.commit()
     conn.close()
@@ -69,7 +60,14 @@ def insertStockHistory(stock_code, stock_history):
 if __name__ == "__main__":
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
-    selectAllStockInfo()
+
+    all_stock_list = select_all_stock_info()
+
+    for stock in all_stock_list:
+        # 일별 주가 데이터 가져오기(1주 = 5일, 1년 = 260일, 10년 = 2600일)
+        stock_history = webreader.get_stock_history(stock['stock_code'], 2600)
+        insert_stock_history(stock['stock_code'], stock_history)
+
 
     # storckHistory = webreader.get_stock_history('307950',1)
     # print(storckHistory)

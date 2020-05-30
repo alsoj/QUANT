@@ -115,54 +115,26 @@ def get_stock_code():
     return code_df
 
 # 주가 데이터 크롤링 from 네이버 금융
-def get_stock_history(code, pageNum):
+def get_stock_history(code, count):
     """
     크롤링 결과 예시
-    일자 : <td align="center"><span class="tah p10 gray03">2020.05.26</span></td>
-    종가 : <td class="num"><span class="tah p11">44,800</span></td>
-    전일비 : <td class="num"><span class="tah p11 red02">1,050</span></td>
-    시가 : <td class="num"><span class="tah p11">43,450</span></td>
-    고가 : <td class="num"><span class="tah p11">45,150</span></td>
-    저가 : <td class="num"><span class="tah p11">43,400</span></td>
-    거래량 : <td class="num"><span class="tah p11">69,812</span></td>
-
+    <item data="20190314|43700|44300|43550|43850|18039161"> ==> 일자|시가|고가|저가|종가|거래량
     """
-    stockHistory = []
-    for i in range(pageNum+1):
-        print("주가 데이터 크롤링 : {} 진행 중".format(pageNum-i))
-        url = "https://finance.naver.com/item/sise_day.nhn?code={}&page={}".format(code, pageNum-i)
-        html = requests.get(url).text
-        soup = BeautifulSoup(html, "html5lib")
+    stock_history = []
+    url = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count={}&requestType=0".format(code, count)
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "lxml")
 
-        date = soup.findAll('span', attrs={'class':'p10'})
-        price = soup.findAll('span', attrs={'class':'p11'})
+    data = soup.findAll('item')
 
-        for j in range(len(date)):
-            dayResult = []
-            dayResult.append(date[j].text.strip().replace(".", "")) # 일자
-            dayResult.append(price[6*j].text.strip().replace(",", "")) # 종가
-            dayResult.append("+" + price[6 * j+1].text.strip().replace(",", "")
-                             if "red" in str(price[6 * j+1]) else
-                             "-" + price[6 * j+1].text.strip().replace(",", "")) # 전일비
-            dayResult.append(price[6 * j+2].text.strip().replace(",", "")) # 시가
-            dayResult.append(price[6 * j+3].text.strip().replace(",", "")) # 고가
-            dayResult.append(price[6 * j+4].text.strip().replace(",", "")) # 저가
-            dayResult.append(price[6 * j+5].text.strip().replace(",", "")) # 거래량
+    for row in data:
+        # 일자별 데이터 세팅 ['20200518', '47950', '49100', '47600', '48800', '20481981']
+        daily_history = re.findall(r"[-+]?\d*\.\d+|\d+", str(row))
+        stock_history.append(daily_history)
 
-            stockHistory.append(dayResult)
-
-            # print("일자 : " + date[j].text.strip().replace(".", ""))
-            # print("종가 : " + price[6*j].text.strip().replace(",", ""))
-            # print("전일비 : " + "+" + price[6 * j+1].text.strip().replace(",", "")
-            #                   if "red" in str(price[6 * j+1]) else
-            #                   "전일비 : " + "-" + price[6 * j+1].text.strip().replace(",", ""))
-            # print("시가 : " + price[6 * j+2].text.strip().replace(",", ""))
-            # print("고가 : " + price[6 * j+3].text.strip().replace(",", ""))
-            # print("저가 : " + price[6 * j+4].text.strip().replace(",", ""))
-            # print("거래량 : " + price[6 * j+5].text.strip().replace(",", ""))
-            # print("/"*50)
-
-    return stockHistory
+    return stock_history
 
 if __name__ == "__main__":
     print("main start")
+    stock_history = get_stock_history('005930', 10)
+    print(stock_history)
