@@ -101,18 +101,19 @@ def get_previous_dividend_yield(code):
 
 # 상장 기업 종목 코드 가져오기 from 한국거래소
 def get_stock_code():
-    code_df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&orderStat=D', header=0)[0]
+    url = 'http://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&orderStat=D'
+    df_code = pd.read_html(url, header=0)[0]
 
     # 종목코드가 6자리이기 때문에 6자리를 맞춰주기 위해 설정해줌
-    code_df.종목코드 = code_df.종목코드.map('{:06d}'.format)
+    df_code.종목코드 = df_code.종목코드.map('{:06d}'.format)
 
-    # 우리가 필요한 것은 회사명과 종목코드이기 때문에 필요없는 column들은 제외해준다.
-    code_df = code_df[['회사명', '종목코드']]
+    # 필요한 컬럼만 남김(회사 명과 종목코드)
+    df_code = df_code[['회사명', '종목코드']]
 
-    # 한글로된 컬럼명을 영어로 바꿔준다.
-    code_df = code_df.rename(columns={'회사명': 'name', '종목코드': 'code'})
+    # 한글로 된 컬럼명을 영어로 변경
+    df_code = df_code.rename(columns={'회사명': 'name', '종목코드': 'code'})
 
-    return code_df
+    return df_code
 
 # 주가 데이터 크롤링 from 네이버 금융
 def get_stock_history(code, count):
@@ -123,7 +124,7 @@ def get_stock_history(code, count):
     stock_history = []
     url = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count={}&requestType=0".format(code, count)
     html = requests.get(url).text
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html5lib")
 
     data = soup.findAll('item')
 
@@ -134,7 +135,37 @@ def get_stock_history(code, count):
 
     return stock_history
 
+def get_stock_detail(code):
+    print("code ::: " + code)
+    # temp_url = 'https://finance.naver.com/item/coinfo.nhn?code={}&target=finsum_more'.format(code)
+    temp_url = 'https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={}&amp;target=finsum_more'.format(code)
+    print("url ::: " + temp_url)
+    html = requests.get(temp_url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    print(soup)
+    # --> encparam을 읽어서 같이 전달하면 될 듯??
+
+
+    # url = 'https://navercomp.wisereport.co.kr/v2/company/ajax/cF1001.aspx?cmp_cd={}&fin_typ=0&freq_typ=Y&encparam=dXl6WlRXajBkQW5tdko2Z2treFFwQT09&id=ZTRzQlVCd0'.format(code)
+    # print("url ::: " + url)
+    # html = requests.get(url).text
+    # soup = BeautifulSoup(html, "html.parser")
+
+    # print(soup)
+
+    # title = soup.findAll('th', attrs={'class': 'bg txt title'})
+    # value = soup.findAll('td', attrs={'class':{'num line','num bgE line','num bgE noline-right'} })
+
+    # print(value[0].text.strip())
+
+    # for i in range(len(title)):
+    #     print(title[i].text.strip())
+
+
 if __name__ == "__main__":
     print("main start")
-    stock_history = get_stock_history('005930', 10)
-    print(stock_history)
+    # stock_history = get_stock_history('005930', 10)
+    # print(stock_history)
+
+    get_stock_detail('307950')
