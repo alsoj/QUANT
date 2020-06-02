@@ -136,27 +136,44 @@ def get_stock_history(code, count):
     return stock_history
 
 def get_stock_detail(code):
-    print("code ::: " + code)
-    # temp_url = 'https://finance.naver.com/item/coinfo.nhn?code={}&target=finsum_more'.format(code)
+    print("찾을 종목 code ::: " + code)
+
     temp_url = 'https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={}&amp;target=finsum_more'.format(code)
-    print("url ::: " + temp_url)
     html = requests.get(temp_url).text
+
+    cookies = requests.get(temp_url).cookies
+    print(cookies)
+
+    headers = requests.get(temp_url).headers
+    print(headers)
+
+    status_code = requests.get(temp_url).status_code
+    print(status_code)
+
     soup = BeautifulSoup(html, "html.parser")
-
-    print(soup)
-    # --> encparam을 읽어서 같이 전달하면 될 듯??
-
-
-    # url = 'https://navercomp.wisereport.co.kr/v2/company/ajax/cF1001.aspx?cmp_cd={}&fin_typ=0&freq_typ=Y&encparam=dXl6WlRXajBkQW5tdko2Z2treFFwQT09&id=ZTRzQlVCd0'.format(code)
-    # print("url ::: " + url)
-    # html = requests.get(url).text
-    # soup = BeautifulSoup(html, "html.parser")
 
     # print(soup)
 
+    # 크롤링한 web page 중 ajax에서 전달하는 encparam & id 추출
+    soup = str(soup)
+    encStartIndex = soup.find('encparam:')
+    encparam = soup[encStartIndex+11 : encStartIndex+43]
+    idStartIndex = soup.find("id: '")
+    id = soup[idStartIndex+5 : idStartIndex+15]
+
+    # print("encparam ::: " + encparam)
+    # print("id ::: " + id)
+
+    url = 'https://navercomp.wisereport.co.kr/v2/company/ajax/cF1001.aspx?cmp_cd={}&fin_typ=0&freq_typ=Y&encparam={}&id={}'.format(code, encparam, id)
+    print("url ::: " + url)
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    print(soup)
+    #
     # title = soup.findAll('th', attrs={'class': 'bg txt title'})
     # value = soup.findAll('td', attrs={'class':{'num line','num bgE line','num bgE noline-right'} })
-
+    #
     # print(value[0].text.strip())
 
     # for i in range(len(title)):
@@ -168,4 +185,4 @@ if __name__ == "__main__":
     # stock_history = get_stock_history('005930', 10)
     # print(stock_history)
 
-    get_stock_detail('307950')
+    get_stock_detail('005380')
