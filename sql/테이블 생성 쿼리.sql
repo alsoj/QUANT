@@ -15,7 +15,7 @@ CREATE TABLE `STOCK_HISTORY` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*********************
-1.종목 정보 테이블 생성
+2.종목 정보 테이블 생성
 *********************/
 DROP TABLE `STOCK_INFO`;
 CREATE TABLE `STOCK_INFO` (
@@ -23,5 +23,50 @@ CREATE TABLE `STOCK_INFO` (
   `stock_name` varchar(200) DEFAULT NULL COMMENT '종목명',
   `stock_type` varchar(10) DEFAULT NULL COMMENT '종목 타입',
   `use_yn` varchar(1) DEFAULT NULL COMMENT '사용 여부',
+  PRIMARY KEY (`stock_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+/*********************
+3.종목 상세(재무정보) 테이블 생성
+*********************/
+DROP TABLE `STOCK_DETAIL`;
+CREATE TABLE `STOCK_DETAIL` (
+  `stock_code` varchar(10) NOT NULL COMMENT '종목 코드',
+  `date` date NOT NULL COMMENT '일자',
+  `detail_1` float DEFAULT NULL COMMENT '매출액',
+  `detail_2` float DEFAULT NULL COMMENT '영업이익',
+  `detail_3` float DEFAULT NULL COMMENT '영업이익(발표기준)',
+  `detail_4` float DEFAULT NULL COMMENT '세전계속사업이익',
+  `detail_5` float DEFAULT NULL COMMENT '당기순이익',
+  `detail_6` float DEFAULT NULL COMMENT '당기순이익(지배)',
+  `detail_7` float DEFAULT NULL COMMENT '당기순이익(비지배)',
+  `detail_8` float DEFAULT NULL COMMENT '자산총계',
+  `detail_9` float DEFAULT NULL COMMENT '부채총계',
+  `detail_10` float DEFAULT NULL COMMENT '자본총계',
+  `detail_11` float DEFAULT NULL COMMENT '자본총계(지배)',
+  `detail_12` float DEFAULT NULL COMMENT '자본총계(비지배)',
+  `detail_13` float DEFAULT NULL COMMENT '자본금',
+  `detail_14` float DEFAULT NULL COMMENT '영업활동현금흐름',
+  `detail_15` float DEFAULT NULL COMMENT '투자활동현금흐름',
+  `detail_16` float DEFAULT NULL COMMENT '재무활동현금흐름',
+  `detail_17` float DEFAULT NULL COMMENT 'CAPEX',
+  `detail_18` float DEFAULT NULL COMMENT 'FCF',
+  `detail_19` float DEFAULT NULL COMMENT '이자발생부채',
+  `detail_20` float DEFAULT NULL COMMENT '영업이익률',
+  `detail_21` float DEFAULT NULL COMMENT '순이익률',
+  `detail_22` float DEFAULT NULL COMMENT 'ROE(%)',
+  `detail_23` float DEFAULT NULL COMMENT 'ROA(%)',
+  `detail_24` float DEFAULT NULL COMMENT '부채비율',
+  `detail_25` float DEFAULT NULL COMMENT '자본유보율',
+  `detail_26` float DEFAULT NULL COMMENT 'EPS(원)',
+  `detail_27` float DEFAULT NULL COMMENT 'PER(배)',
+  `detail_28` float DEFAULT NULL COMMENT 'BPS(원)',
+  `detail_29` float DEFAULT NULL COMMENT 'PBR(배)',
+  `detail_30` float DEFAULT NULL COMMENT '현금DPS(원)',
+  `detail_31` float DEFAULT NULL COMMENT '현금배당수익률',
+  `detail_32` float DEFAULT NULL COMMENT '현금배당성향(%)',
+  `detail_33` float DEFAULT NULL COMMENT '발행주식수(보통주)',
   PRIMARY KEY (`stock_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

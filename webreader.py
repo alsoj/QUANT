@@ -3,6 +3,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import datetime
 import re
+from selenium.webdriver import Chrome
 
 pd.set_option('display.expand_frame_repr', False)
 
@@ -101,6 +102,11 @@ def get_previous_dividend_yield(code):
 
 # 상장 기업 종목 코드 가져오기 from 한국거래소
 def get_stock_code():
+    """
+    한국 거래소에 상장된 전체 기업 종목코드 조회
+    :return: 회사명, 종목코드가 포함된 데이터프레임
+    """
+
     url = 'http://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&orderStat=D'
     df_code = pd.read_html(url, header=0)[0]
 
@@ -120,6 +126,9 @@ def get_stock_history(code, count):
     """
     크롤링 결과 예시
     <item data="20190314|43700|44300|43550|43850|18039161"> ==> 일자|시가|고가|저가|종가|거래량
+    :param code: 종목 코드
+    :param count: 가져올 데이터 건 수
+    :return: 해당 종목 코드의 일자, 시가, 고가, 저가, 종가, 거래량 데이터
     """
     stock_history = []
     url = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count={}&requestType=0".format(code, count)
@@ -135,49 +144,60 @@ def get_stock_history(code, count):
 
     return stock_history
 
+
+
 def get_stock_detail(code):
-    print("찾을 종목 code ::: " + code)
+    """
+    재무제표 크롤링
+    :param code: 종목 코드
+    :return: 재무제표 정보 리스트
+    """
+    driver = Chrome(executable_path=r'./assets/chromedriver.exe')
+    driver.maximize_window()
 
-    temp_url = 'https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={}&amp;target=finsum_more'.format(code)
-    html = requests.get(temp_url).text
+    # code = 종목번호
+    base_url = 'https://finance.naver.com/item/coinfo.nhn?code={}&target=finsum_more'.format(code)
 
-    cookies = requests.get(temp_url).cookies
-    print(cookies)
+    driver.get(base_url)
+    # frmae구조 안에 필요한 데이터가 있기 때문에 해당 데이터를 수집하기 위해서는 frame구조에 들어가야한다.
+    driver.switch_to.frame(driver.find_element_by_id('coinfo_cp'))
 
-    headers = requests.get(temp_url).headers
-    print(headers)
+    # 재무제표 "연간" 클릭하기
+    driver.find_elements_by_xpath('//*[@class="schtab"][1]/tbody/tr/td[3]')[0].click()
 
-    status_code = requests.get(temp_url).status_code
-    print(status_code)
+    html0 = driver.page_source
+    html1 = BeautifulSoup(html0, 'html.parser')
 
-    soup = BeautifulSoup(html, "html.parser")
+    html22 = html1.find('table', {'class': 'gHead01 all-width', 'summary': '주요재무정보를 제공합니다.'})
 
-    # print(soup)
+    # date scrapy
+    thead0 = html22.find('thead')
+    tr0 = thead0.find_all('tr')[1]
+    th0 = tr0.find_all('th')
 
-    # 크롤링한 web page 중 ajax에서 전달하는 encparam & id 추출
-    soup = str(soup)
-    encStartIndex = soup.find('encparam:')
-    encparam = soup[encStartIndex+11 : encStartIndex+43]
-    idStartIndex = soup.find("id: '")
-    id = soup[idStartIndex+5 : idStartIndex+15]
+    date = []
+    for i in range(len(th0)):
+        date.append(''.join(re.findall('[0-9/]', th0[i].text.replace("/",""))))
 
-    # print("encparam ::: " + encparam)
-    # print("id ::: " + id)
+    # main scrapy
+    tbody0 = html22.find('tbody')
+    tr0 = tbody0.find_all('tr')
+    td = []
+    for j in range(len(tr0)):
+        td0 = tr0[j].find_all('td')
+        td1 = []
+        for k in range(len(td0)):
+            if td0[k].text == '':
+                td1.append('0')
+            else:
+                td1.append(td0[k].text.replace(",", ""))
 
-    url = 'https://navercomp.wisereport.co.kr/v2/company/ajax/cF1001.aspx?cmp_cd={}&fin_typ=0&freq_typ=Y&encparam={}&id={}'.format(code, encparam, id)
-    print("url ::: " + url)
-    html = requests.get(url).text
-    soup = BeautifulSoup(html, "html.parser")
+        td.append(td1)
 
-    print(soup)
-    #
-    # title = soup.findAll('th', attrs={'class': 'bg txt title'})
-    # value = soup.findAll('td', attrs={'class':{'num line','num bgE line','num bgE noline-right'} })
-    #
-    # print(value[0].text.strip())
+    result = list(map(list, zip(date, *td)))
+    driver.quit()
 
-    # for i in range(len(title)):
-    #     print(title[i].text.strip())
+    return result
 
 
 if __name__ == "__main__":
@@ -185,4 +205,5 @@ if __name__ == "__main__":
     # stock_history = get_stock_history('005930', 10)
     # print(stock_history)
 
-    get_stock_detail('005380')
+    result = get_stock_detail('005380')
+    print(result)
