@@ -3,7 +3,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import datetime
 import re
-from selenium.webdriver import Chrome
+from selenium import webdriver
 
 pd.set_option('display.expand_frame_repr', False)
 
@@ -152,8 +152,13 @@ def get_stock_detail(code):
     :param code: 종목 코드
     :return: 재무제표 정보 리스트
     """
-    driver = Chrome(executable_path=r'./assets/chromedriver.exe')
-    driver.maximize_window()
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')
+    options.add_argument('window-size=1920x1080')
+    options.add_argument("disable-gpu")
+
+    driver = webdriver.Chrome(executable_path=r'./assets/chromedriver.exe', chrome_options=options)
+    # driver.maximize_window()
 
     # code = 종목번호
     # base_url = 'https://finance.naver.com/item/coinfo.nhn?code={}&target=finsum_more'.format(code)

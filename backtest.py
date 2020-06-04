@@ -83,6 +83,21 @@ def insert_stock_detail(stock_code, stock_detail):
     conn.commit()
     conn.close()
 
+def checkIsExisted(stock_code):
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+
+    # Connection 으로부터 Dictoionary Cursor 생성
+    curs = conn.cursor()
+    sql = """select count(*) from STOCK_DETAIL where stock_code = %s"""
+    curs.execute(sql, (stock_code))
+
+    count = curs.fetchone()
+    if int(count[0]) > 0:
+        return True
+    else:
+        return False
+
 if __name__ == "__main__":
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
@@ -99,9 +114,13 @@ if __name__ == "__main__":
     print("전체 건수 ::: " + str(total_count))
     i = 1
     for stock in all_stock_list:
-        print("{}번째 종목 입력 중".format(i))
-        stock_detail = webreader.get_stock_detail(stock['stock_code'])
-        insert_stock_detail(stock['stock_code'], stock_detail)
+        print("{}번째 종목 입력 중 ::: {}".format(i, stock['stock_code']))
+
+        # 기존에 입력되지 않은 건들만
+        if checkIsExisted(stock['stock_code']) == False:
+            stock_detail = webreader.get_stock_detail(stock['stock_code'])
+            insert_stock_detail(stock['stock_code'], stock_detail)
+
         i = i + 1
 
     # storckHistory = webreader.get_stock_history('307950',1)
