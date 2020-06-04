@@ -156,11 +156,12 @@ def get_stock_detail(code):
     driver.maximize_window()
 
     # code = 종목번호
-    base_url = 'https://finance.naver.com/item/coinfo.nhn?code={}&target=finsum_more'.format(code)
+    # base_url = 'https://finance.naver.com/item/coinfo.nhn?code={}&target=finsum_more'.format(code)
+    base_url = 'https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={}'.format(code)
 
     driver.get(base_url)
     # frmae구조 안에 필요한 데이터가 있기 때문에 해당 데이터를 수집하기 위해서는 frame구조에 들어가야한다.
-    driver.switch_to.frame(driver.find_element_by_id('coinfo_cp'))
+    # driver.switch_to.frame(driver.find_element_by_id('coinfo_cp'))
 
     # 재무제표 "연간" 클릭하기
     driver.find_elements_by_xpath('//*[@class="schtab"][1]/tbody/tr/td[3]')[0].click()
@@ -187,7 +188,7 @@ def get_stock_detail(code):
         td0 = tr0[j].find_all('td')
         td1 = []
         for k in range(len(td0)):
-            if td0[k].text == '':
+            if td0[k].text == '' or td0[k].text == 'N/A' :
                 td1.append('0')
             else:
                 td1.append(td0[k].text.replace(",", ""))

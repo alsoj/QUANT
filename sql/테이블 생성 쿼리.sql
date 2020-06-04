@@ -34,7 +34,7 @@ CREATE TABLE `STOCK_INFO` (
 DROP TABLE `STOCK_DETAIL`;
 CREATE TABLE `STOCK_DETAIL` (
   `stock_code` varchar(10) NOT NULL COMMENT '종목 코드',
-  `date` date NOT NULL COMMENT '일자',
+  `date` varchar(10) NOT NULL COMMENT '일자',
   `detail_1` float DEFAULT NULL COMMENT '매출액',
   `detail_2` float DEFAULT NULL COMMENT '영업이익',
   `detail_3` float DEFAULT NULL COMMENT '영업이익(발표기준)',
@@ -68,5 +68,5 @@ CREATE TABLE `STOCK_DETAIL` (
   `detail_31` float DEFAULT NULL COMMENT '현금배당수익률',
   `detail_32` float DEFAULT NULL COMMENT '현금배당성향(%)',
   `detail_33` float DEFAULT NULL COMMENT '발행주식수(보통주)',
-  PRIMARY KEY (`stock_code`)
+  PRIMARY KEY (`stock_code`,`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
