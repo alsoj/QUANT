@@ -118,9 +118,12 @@ if __name__ == "__main__":
 
         # 기존에 입력되지 않은 건들만
         if checkIsExisted(stock['stock_code']) == False:
-            stock_detail = webreader.get_stock_detail(stock['stock_code'])
-            insert_stock_detail(stock['stock_code'], stock_detail)
-
+            try:
+                stock_detail = webreader.get_stock_detail(stock['stock_code'])
+                insert_stock_detail(stock['stock_code'], stock_detail)
+            except:
+                print("{} ::: 디테일 INSERT 오류발생".format(str(stock['stock_code'])))
+                pass
         i = i + 1
 
     # storckHistory = webreader.get_stock_history('307950',1)

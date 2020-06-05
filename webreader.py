@@ -168,6 +168,9 @@ def get_stock_detail(code):
     # frmae구조 안에 필요한 데이터가 있기 때문에 해당 데이터를 수집하기 위해서는 frame구조에 들어가야한다.
     # driver.switch_to.frame(driver.find_element_by_id('coinfo_cp'))
 
+    # print(base_url)
+    # print(driver.page_source)
+
     # 재무제표 "연간" 클릭하기
     driver.find_elements_by_xpath('//*[@class="schtab"][1]/tbody/tr/td[3]')[0].click()
 
