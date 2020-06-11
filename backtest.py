@@ -1,7 +1,7 @@
 import pymysql
 import webreader
 
-def insertStockInfo(df_stock_code):
+def insert_stock_info(df_stock_code):
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
                            db='quant', charset='utf8')
 
@@ -79,9 +79,28 @@ def insert_stock_detail(stock_code, stock_detail):
                            , row[20], row[21], row[22], row[23], row[24], row[25], row[26], row[27], row[28], row[29]
                            , row[30], row[31], row[32], row[33]))
 
-
     conn.commit()
     conn.close()
+
+def select_undervalued_stock(yyyymm, topN):
+    """
+    :param yyyymm:기준연월
+    :param topN:추출 종목 수
+    :return: undervalued_stock_list
+    """
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+    curs = conn.cursor()
+    sql = """
+    
+            """
+
+    # SQL문 실행
+    curs.execute(sql)
+    undervalued_stock_list = curs.fetchall()
+    conn.close()
+
+    return undervalued_stock_list
 
 def checkIsExisted(stock_code):
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
