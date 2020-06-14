@@ -92,17 +92,79 @@ def select_undervalued_stock(yyyymm, topN):
                            db='quant', charset='utf8')
     curs = conn.cursor()
     sql = """
-    
-            """
+          SELECT DISTINCT STOCK_CODE
+            FROM STOCK_DETAIL
+           WHERE 1=1
+             AND DATE < %s
+             AND detail_2 > 0 # 영업이익
+             AND detail_22 > 10 # ROE
+             AND detail_24 < 100 # 부채비율
+             AND detail_31 > 3 # 배당수익률
+             AND detail_27 > 0 # PER
+             AND detail_27 < 10
+             AND detail_29 > 0 # PBR
+             AND detail_29 < 0.8
+           ORDER BY detail_27
+           """
 
     # SQL문 실행
-    curs.execute(sql)
+    curs.execute(sql, (yyyymm))
     undervalued_stock_list = curs.fetchall()
     conn.close()
 
-    return undervalued_stock_list
+    return undervalued_stock_list[:topN]
 
-def checkIsExisted(stock_code):
+def buy_stock(port_no, yyyymmdd, stock_list):
+    """
+    매수 함수
+    :param port_no: 포트폴리오 번호
+    :param yyyymmdd: 기준일자
+    :param stock_list: 매수대상 list
+    :return:
+    """
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+    curs = conn.cursor()
+
+    # 매수가능 예수금 가져오기
+    select_deposit_sql = """SELECT DEPOSIT FROM ACCOUNT WHERE PORT_NO = %s"""
+
+    # 종목명 가져오기
+    select_stock_name_sql = """SELECT STOCK_NAME FROM STOCK_INFO WHERE STOCK_CODE = %s"""
+
+    # 기준일자 주가 가져오기(최신기준 고가)
+    select_stock_price_sql = """SELECT HIGH 
+                                  FROM STOCK_HISTORY 
+                                 WHERE STOCK_CODE = %s
+                                   AND DATE = (SELECT MAX(DATE) 
+                                              FROM STOCK_HISTORY 
+                                             WHERE STOCK_CODE = %s 
+                                               AND DATE <= %s)
+                            """
+
+    insert_account_sql = """
+          INSERT INTO ACCOUNT_DETAIL ('PORT_NO','STOCK_CODE','STOCK_NAME','EARNINGS','EARNINGS_RATE','BALANCE','EVALUATED_PRICE','PURCHASE_PRICE','PRESENT_PRICE')
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """
+
+    # 종목별 매수금액 계산
+    curs.execute(select_deposit_sql, (port_no))
+    deposit = curs.fetchone()
+    print(deposit)
+    buying_amount = int(deposit / len(stock_list))
+
+    for stock_code in stock_list:
+        # 기준일자 최신 고가
+        curs.execute(select_stock_price_sql, (stock_code, stock_code, yyyymmdd))
+        high_price = curs.fetchone()
+        
+        # 매수량
+        balance = int(buying_amount / high_price)
+
+        curs.execute(insert_account_sql, (port_no, stock_code, stock_code, 0, 0, ))
+
+
+def check_is_existed(stock_code):
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
                            db='quant', charset='utf8')
 
@@ -129,6 +191,8 @@ if __name__ == "__main__":
         stock_history = webreader.get_stock_history(stock['stock_code'], 2600)
         insert_stock_history(stock['stock_code'], stock_history)
     """
+
+    """    
     total_count = len(all_stock_list)
     print("전체 건수 ::: " + str(total_count))
     i = 1
@@ -136,7 +200,7 @@ if __name__ == "__main__":
         print("{}번째 종목 입력 중 ::: {}".format(i, stock['stock_code']))
 
         # 기존에 입력되지 않은 건들만
-        if checkIsExisted(stock['stock_code']) == False:
+        if check_is_existed(stock['stock_code']) == False:
             try:
                 stock_detail = webreader.get_stock_detail(stock['stock_code'])
                 insert_stock_detail(stock['stock_code'], stock_detail)
@@ -144,6 +208,6 @@ if __name__ == "__main__":
                 print("{} ::: 디테일 INSERT 오류발생".format(str(stock['stock_code'])))
                 pass
         i = i + 1
+    """
 
-    # storckHistory = webreader.get_stock_history('307950',1)
-    # print(storckHistory)
+    print(select_undervalued_stock(201712, 10))

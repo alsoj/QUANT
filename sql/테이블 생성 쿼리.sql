@@ -70,3 +70,33 @@ CREATE TABLE `STOCK_DETAIL` (
   `detail_33` float DEFAULT NULL COMMENT '발행주식수(보통주)',
   PRIMARY KEY (`stock_code`,`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*********************
+4.계좌 테이블 생성
+*********************/
+DROP TABLE `ACCOUNT`;
+CREATE TABLE `ACCOUNT` (
+	`PORT_NO` int(10) NOT NULL COMMENT '포트폴리오 넘버',
+	`ASSET` float NOT NULL COMMENT '총자산',
+    `DEPOSIT` float NULL COMMENT '예수금',
+	`EARNINGS` float NULL COMMENT '손익',
+	`EARNINGS_RATE` float NULL COMMENT '수익률',
+	PRIMARY KEY (`portfolio_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*********************
+5.계좌 상세 테이블 생성
+*********************/
+DROP TABLE `ACCOUNT_DETAIL`;
+CREATE TABLE `ACCOUNT_DETAIL` (
+	`PORT_NO` int(10) NOT NULL COMMENT '포트폴리오 넘버',
+	`STOCK_CODE` varchar(10) NOT NULL COMMENT '종목 코드',
+	`STOCK_NAME` varchar(200) DEFAULT NULL COMMENT '종목명',
+	`EARNINGS` float DEFAULT NULL COMMENT '평가손익',
+    `EARNINGS_RATE` float DEFAULT NULL COMMENT '수익률',
+    `BALANCE` int(10) DEFAULT NULL COMMENT '잔고',
+    `EVALUATED_PRICE` float DEFAULT NULL COMMENT '평가금액',
+    `PURCHASE_PRICE` float DEFAULT NULL COMMENT '매입가',
+    `PRESENT_PRICE` float DEFAULT NULL COMMENT '현재가',
+	PRIMARY KEY (`PORT_NO`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
