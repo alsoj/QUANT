@@ -21,8 +21,12 @@ DROP TABLE `STOCK_INFO`;
 CREATE TABLE `STOCK_INFO` (
   `stock_code` varchar(10) NOT NULL COMMENT '종목 코드',
   `stock_name` varchar(200) DEFAULT NULL COMMENT '종목명',
-  `stock_type` varchar(10) DEFAULT NULL COMMENT '종목 타입',
-  `use_yn` varchar(1) DEFAULT NULL COMMENT '사용 여부',
+  `stock_type` varchar(20) DEFAULT NULL COMMENT '종목 타입',
+  `kor_yn` varchar(1) DEFAULT NULL COMMENT '본사 국내 여부',
+  `holdings_yn` varchar(1) DEFAULT NULL COMMENT '지주사 여부',
+  `finance_yn` varchar(1) DEFAULT NULL COMMENT '금융사 여부',
+  `spac_yn` varchar(1) DEFAULT NULL COMMENT '스팩 여부',
+  `use_yn` varchar(1) DEFAULT 'Y' COMMENT '사용 여부',
   PRIMARY KEY (`stock_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -81,7 +85,7 @@ CREATE TABLE `ACCOUNT` (
     `DEPOSIT` float NULL COMMENT '예수금',
 	`EARNINGS` float NULL COMMENT '손익',
 	`EARNINGS_RATE` float NULL COMMENT '수익률',
-	PRIMARY KEY (`portfolio_no`)
+	PRIMARY KEY (`PORT_NO`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*********************

@@ -1,5 +1,28 @@
 import pymysql
 import webreader
+import pandas as pd
+import os
+
+def insert_stock_info_from_quantking():
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+
+    curs = conn.cursor()
+    insert_stock_info_sql = """
+        INSERT INTO STOCK_INFO(STOCK_CODE, STOCK_NAME , STOCK_TYPE, KOR_YN, HOLDINGS_YN, FINANCE_YN, SPAC_YN)
+             values (%s, %s, %s, %s, %s, %s, %s)"""
+
+    # 현재경로
+    # print(os.getcwd())
+
+    df_stock_info = pd.read_excel('./assets/data/stock_info.xlsx')
+
+    for i, row in df_stock_info.iterrows():
+        curs.execute(insert_stock_info_sql, (row['종목코드'][1:], row['종목명'], row['업종'], row['국내'], row['지주사'], row['금융사'], row['스팩']))
+
+    conn.commit()
+    conn.close()
+
 
 def insert_stock_info(df_stock_code):
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
@@ -114,6 +137,27 @@ def select_undervalued_stock(yyyymm, topN):
 
     return undervalued_stock_list[:topN]
 
+def create_account(port_no, asset):
+    """
+    백테스트용 계좌 생성
+    :param port_no: 포트폴리오 번호
+    :param asset: 시작 자산
+    :return:
+    """
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+    curs = conn.cursor()
+
+    insert_account_sql = """
+        INSERT INTO ACCOUNT (PORT_NO, ASSET, DEPOSIT, EARNINGS, EARNINGS_RATE)  VALUES (%s, %s, %s, 0, 0)
+        ON DUPLICATE KEY UPDATE
+        ASSET = %s, DEPOSIT = %s, EARNINGS = 0, EARNINGS_RATE = 0    
+    """
+
+    curs.execute(insert_account_sql, (port_no, asset, asset, asset, asset))
+    conn.commit()
+    conn.close()
+
 def buy_stock(port_no, yyyymmdd, stock_list):
     """
     매수 함수
@@ -133,35 +177,52 @@ def buy_stock(port_no, yyyymmdd, stock_list):
     select_stock_name_sql = """SELECT STOCK_NAME FROM STOCK_INFO WHERE STOCK_CODE = %s"""
 
     # 기준일자 주가 가져오기(최신기준 고가)
-    select_stock_price_sql = """SELECT HIGH 
-                                  FROM STOCK_HISTORY 
-                                 WHERE STOCK_CODE = %s
-                                   AND DATE = (SELECT MAX(DATE) 
-                                              FROM STOCK_HISTORY 
-                                             WHERE STOCK_CODE = %s 
-                                               AND DATE <= %s)
-                            """
+    select_stock_price_sql = """
+        SELECT HIGH 
+          FROM STOCK_HISTORY 
+         WHERE STOCK_CODE = %s
+           AND DATE = (SELECT MAX(DATE) 
+                         FROM STOCK_HISTORY 
+                        WHERE STOCK_CODE = %s 
+                          AND DATE <= %s)
+        """
 
-    insert_account_sql = """
-          INSERT INTO ACCOUNT_DETAIL ('PORT_NO','STOCK_CODE','STOCK_NAME','EARNINGS','EARNINGS_RATE','BALANCE','EVALUATED_PRICE','PURCHASE_PRICE','PRESENT_PRICE')
+    insert_account_detail_sql = """
+        INSERT INTO ACCOUNT_DETAIL (PORT_NO, STOCK_CODE, STOCK_NAME, EARNINGS, EARNINGS_RATE, BALANCE, EVALUATED_PRICE, PURCHASE_PRICE, PRESENT_PRICE)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """
+
+    update_account_sql = """
+        UPDATE ACCOUNT
+           SET DEPOSIT = DEPOSIT - %s
+         WHERE PORT_NO = %s
                         """
 
     # 종목별 매수금액 계산
     curs.execute(select_deposit_sql, (port_no))
-    deposit = curs.fetchone()
-    print(deposit)
+    deposit = curs.fetchone()[0]
     buying_amount = int(deposit / len(stock_list))
 
     for stock_code in stock_list:
         # 기준일자 최신 고가
         curs.execute(select_stock_price_sql, (stock_code, stock_code, yyyymmdd))
-        high_price = curs.fetchone()
+        high_price = curs.fetchone()[0]
         
         # 매수량
         balance = int(buying_amount / high_price)
 
-        curs.execute(insert_account_sql, (port_no, stock_code, stock_code, 0, 0, ))
+        # 종목명 가져오기
+        curs.execute(select_stock_name_sql, (stock_code))
+        stock_name = curs.fetchone()
+
+        # 매수 - 계좌 상세 테이블에 INSERT
+        curs.execute(insert_account_detail_sql, (port_no, stock_code, stock_name, 0, 0, balance, balance * high_price, high_price, high_price))
+
+        # 매수 - 계좌 테이블 잔액 수정
+        curs.execute(update_account_sql, (balance * high_price, port_no))
+
+    conn.commit()
+    conn.close()
 
 
 def check_is_existed(stock_code):
@@ -180,10 +241,12 @@ def check_is_existed(stock_code):
         return False
 
 if __name__ == "__main__":
+    insert_stock_info_from_quantking()
+
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
 
-    all_stock_list = select_all_stock_info()
+    # all_stock_list = select_all_stock_info()
 
     """
     for stock in all_stock_list:
@@ -210,4 +273,5 @@ if __name__ == "__main__":
         i = i + 1
     """
 
-    print(select_undervalued_stock(201712, 10))
+    # create_account('00001', '1000000')
+    # buy_stock('00001', '20150101', ['005930'])
