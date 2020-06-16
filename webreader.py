@@ -1,12 +1,53 @@
+import pymysql
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import datetime
 import re
 from selenium import webdriver
+from urllib.request import urlopen
+from io import BytesIO
+from zipfile import ZipFile
+import xml.etree.ElementTree as ET
+
 
 pd.set_option('display.expand_frame_repr', False)
 
+def get_stock_info_from_dart():
+    """
+    OPEN DART API를 활용하여 고유번호 데이터를 XML로 저장
+    """
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+
+    curs = conn.cursor()
+    select_apikey_sql = """SELECT CODE_NM FROM CODE_INFO WHERE CODE_ID = 'API'"""
+    curs.execute(select_apikey_sql)
+    api_key = curs.fetchone()[0]
+
+    conn.commit()
+    conn.close()
+
+    # 회사 고유번호 데이터 XML 파일로 저장
+    url = 'https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key={}'.format(api_key)
+    with urlopen(url) as zipresp:
+        with ZipFile(BytesIO(zipresp.read())) as zfile:
+            zfile.extractall('./assets/data/corp_num')
+
+
+# 종목 번호로 회사 고유번호 찾기
+def find_corp_num(stock_code):
+    """
+    종목번호로 OPEN DART API 고유번호 찾기
+    :param stock_code: 종목번호
+    :return: 고유번호
+    """
+    tree = ET.parse('./assets/data/corp_num/CORPCODE.xml')
+    root = tree.getroot()
+
+    for country in root.iter("list"):
+        if country.findtext("stock_code") == stock_code:
+            return country.findtext("corp_code")
 
 def get_financial_statements(code):
     # 인증값 추출
@@ -211,8 +252,14 @@ def get_stock_detail(code):
 
 if __name__ == "__main__":
     print("main start")
+
+
+    # get_stock_info_from_dart()
+
+    print(find_corp_num('005930'))
+
     # stock_history = get_stock_history('005930', 10)
     # print(stock_history)
 
-    result = get_stock_detail('005380')
-    print(result)
+    # result = get_stock_detail('005380')
+    # print(result)

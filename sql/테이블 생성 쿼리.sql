@@ -1,4 +1,16 @@
 /*********************
+0.각종 코드 테이블 생성
+*********************/
+DROP TABLE `CODE_INFO`;
+CREATE TABLE `CODE_INFO` (
+  `CODE_ID` varchar(10) NOT NULL COMMENT '코드 ID',
+  `CODE_NM` varchar(50) NOT NULL COMMENT '코드 명',
+  `USE_YN` VARCHAR(1) DEFAULT NULL COMMENT '사용여부',
+  PRIMARY KEY (`CODE_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+/*********************
 1.주가 히스토리 테이블 생성
 *********************/
 DROP TABLE `STOCK_HISTORY`;
@@ -22,11 +34,12 @@ CREATE TABLE `STOCK_INFO` (
   `stock_code` varchar(10) NOT NULL COMMENT '종목 코드',
   `stock_name` varchar(200) DEFAULT NULL COMMENT '종목명',
   `stock_type` varchar(20) DEFAULT NULL COMMENT '종목 타입',
+  `corp_code` varchar(10) DEFAULT NULL COMMENT '고유번호',
   `kor_yn` varchar(1) DEFAULT NULL COMMENT '본사 국내 여부',
   `holdings_yn` varchar(1) DEFAULT NULL COMMENT '지주사 여부',
   `finance_yn` varchar(1) DEFAULT NULL COMMENT '금융사 여부',
   `spac_yn` varchar(1) DEFAULT NULL COMMENT '스팩 여부',
-  `use_yn` varchar(1) DEFAULT 'Y' COMMENT '사용 여부',
+  `use_yn` varchar(1) DEFAULT '1' COMMENT '사용 여부',
   PRIMARY KEY (`stock_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

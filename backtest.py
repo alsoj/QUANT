@@ -23,6 +23,28 @@ def insert_stock_info_from_quantking():
     conn.commit()
     conn.close()
 
+def update_corp_code():
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+
+    curs = conn.cursor()
+    stock_list = select_all_stock_info()
+
+    update_stock_info_sql = """
+        UPDATE STOCK_INFO SET CORP_CODE = %s WHERE STOCK_CODE = %s
+        """
+
+    print("전체 " + str(len(stock_list)) + "개 기업 중")
+    i = 1
+    for stock in stock_list:
+        print(str(i) + "번 째 입력 중")
+        corp_code = webreader.find_corp_num(stock['stock_code'])
+        curs.execute(update_stock_info_sql, (corp_code, stock['stock_code']))
+        i = i+1
+
+    conn.commit()
+    conn.close()
+
 
 def insert_stock_info(df_stock_code):
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
@@ -241,7 +263,9 @@ def check_is_existed(stock_code):
         return False
 
 if __name__ == "__main__":
-    insert_stock_info_from_quantking()
+    # insert_stock_info_from_quantking()
+
+    update_corp_code()
 
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
