@@ -9,6 +9,9 @@ from urllib.request import urlopen
 from io import BytesIO
 from zipfile import ZipFile
 import xml.etree.ElementTree as ET
+import json
+from pandas.io.json import json_normalize
+
 
 
 pd.set_option('display.expand_frame_repr', False)
@@ -48,6 +51,33 @@ def find_corp_num(stock_code):
     for country in root.iter("list"):
         if country.findtext("stock_code") == stock_code:
             return country.findtext("corp_code")
+
+def get_financial_statements_dart(corp_code):
+    """
+    OPEN DART API를 통해 기업별 재무제표 정보 가져오기
+    :param corp_code: 고유번호
+    :return:
+    """
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+
+    curs = conn.cursor()
+    select_apikey_sql = """SELECT CODE_NM FROM CODE_INFO WHERE CODE_ID = 'API'"""
+    curs.execute(select_apikey_sql)
+    api_key = curs.fetchone()[0]
+
+    conn.commit()
+    conn.close()
+
+    url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={}&corp_code={}&bsns_year={}&reprt_code={}&fs_div=CFS'.format(api_key, corp_code, '2018', '11011 ')
+
+    json = requests.get(url).text
+    print(json)
+
+    json_normalize(json['results'])
+
+
+
 
 def get_financial_statements(code):
     # 인증값 추출
@@ -256,8 +286,7 @@ if __name__ == "__main__":
 
     # get_stock_info_from_dart()
 
-    print(find_corp_num('005930'))
-
+    get_financial_statements_dart('00126380')
     # stock_history = get_stock_history('005930', 10)
     # print(stock_history)
 
