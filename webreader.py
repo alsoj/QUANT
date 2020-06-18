@@ -10,11 +10,8 @@ from io import BytesIO
 from zipfile import ZipFile
 import xml.etree.ElementTree as ET
 import json
-from pandas.io.json import json_normalize
+from pandas import json_normalize
 
-
-
-pd.set_option('display.expand_frame_repr', False)
 
 def get_stock_info_from_dart():
     """
@@ -69,15 +66,25 @@ def get_financial_statements_dart(corp_code):
     conn.commit()
     conn.close()
 
-    url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={}&corp_code={}&bsns_year={}&reprt_code={}&fs_div=CFS'.format(api_key, corp_code, '2018', '11011 ')
+    url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={}&corp_code={}&bsns_year={}&reprt_code={}&fs_div=CFS'.format(api_key, corp_code, '2018', '11013')
 
-    json = requests.get(url).text
-    print(json)
+    html = requests.get(url).text
+    json_result = json.loads(html)
 
-    json_normalize(json['results'])
+    print(json_result)
+
+    df_financial_statement = json_normalize(json_result['list'])
+
+    pd.set_option('display.max_row', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+    pd.set_option('display.max_colwidth', None)
+
+    # print(df_financial_statement.head(100))
 
 
-
+    print(df_financial_statement.columns)
+    print(df_financial_statement[['reprt_code','bsns_year','corp_code','sj_nm','account_id','account_nm','thstrm_amount']])
 
 def get_financial_statements(code):
     # 인증값 추출
