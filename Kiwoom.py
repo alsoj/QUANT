@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
 import time
-import pandas as pd
-import sqlite3
+import pymysql
+
 
 TR_REQ_TIME_INTERVAL = 0.2
 
@@ -101,7 +101,8 @@ class Kiwoom(QAxWidget):
             self._opw00001(rqname, trcode)
         elif rqname == "opw00018_req":
             self._opw00018(rqname, trcode)
-
+        elif rqname == "opt10080_req":
+            self._opt10080(rqname, trcode)
         try:
             self.tr_event_loop.exit()
         except AttributeError:
@@ -159,6 +160,34 @@ class Kiwoom(QAxWidget):
             self.ohlcv['close'].append(int(close))
             self.ohlcv['volume'].append(int(volume))
 
+    # 분봉 데이터 받아오기
+    def _opt10080(self, rqname, trcode):
+        conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                               db='quant', charset='utf8')
+        curs = conn.cursor()
+
+        data_cnt = self._get_repeat_cnt(trcode, rqname)
+        stock_code = self._comm_get_data(trcode, "", rqname, 0, "종목코드")
+
+        for i in range(data_cnt):
+
+            close = self._comm_get_data(trcode, "", rqname, i, "현재가").replace("+", "").replace("-", "")
+            volume = self._comm_get_data(trcode, "", rqname, i, "거래량")
+            date = self._comm_get_data(trcode, "", rqname, i, "체결시간")
+            open = self._comm_get_data(trcode, "", rqname, i, "시가").replace("+", "").replace("-", "")
+            high = self._comm_get_data(trcode, "", rqname, i, "고가").replace("+", "").replace("-", "")
+            low = self._comm_get_data(trcode, "", rqname, i, "저가").replace("+", "").replace("-", "")
+
+            insert_stock_min_price_sql = """
+                INSERT INTO STOCK_MINUTE_PRICE(STOCK_CODE, DATE , CLOSE, OPEN, HIGH, LOW, VOLUME)
+                     values (%s, %s, %s, %s, %s, %s, %s)
+                     """
+            print(stock_code, date, float(close), float(open), float(high), float(low), volume)
+            curs.execute(insert_stock_min_price_sql, (stock_code, date, float(close), float(open), float(high), float(low), volume))
+
+        conn.commit()
+        conn.close()
+
     def reset_opw00018_output(self):
         self.opw00018_output = {'single': [], 'multi': []}
 
@@ -204,15 +233,37 @@ class Kiwoom(QAxWidget):
                                                   earning_rate])
 
 if __name__ == "__main__":
+
     app = QApplication(sys.argv)
     kiwoom = Kiwoom()
     kiwoom.comm_connect()
 
-    kiwoom.reset_opw00018_output()
-    account_number = kiwoom.get_login_info("ACCNO")
-    account_number = account_number.split(';')[0]
 
-    kiwoom.set_input_value("계좌번호", account_number)
-    kiwoom.comm_rq_data("opw00018_req", "opw00018", 0, "2000")
-    print(kiwoom.opw00018_output['single'])
-    print(kiwoom.opw00018_output['multi'])
+    """
+    KOSPI / KOSDAQ ETF 30분봉 데이터 가져오기
+    """
+    # stock_code = '069500' # KODEX 200
+    # stock_code = '229200' # KODEX 코스닥 150
+    # stock_code = '251340' # KODEX 코스닥150선물인버스
+    stock_code = '114800' # KODEX 200 인버스
+    kiwoom.set_input_value("종목코드", stock_code)
+    kiwoom.set_input_value("틱범위", 30)
+    kiwoom.set_input_value("수정주가구분", 0)
+    kiwoom.comm_rq_data("opt10080_req", "opt10080", 0, "3000")
+
+    while kiwoom.remained_data == True:
+        time.sleep(0.2)
+        kiwoom.set_input_value("종목코드", stock_code)
+        kiwoom.set_input_value("틱범위", 30)
+        kiwoom.set_input_value("수정주가구분", 0)
+        kiwoom.comm_rq_data("opt10080_req", "opt10080", 2, "3000")
+
+
+
+    # kiwoom.reset_opw00018_output()
+    # account_number = kiwoom.get_login_info("ACCNO")
+    # account_number = account_number.split(';')[0]
+    #
+    # kiwoom.set_input_value("계좌번호", account_number)
+    # kiwoom.comm_rq_data("opw00018_req", "opw00018", 0, "2000")
+

@@ -1,7 +1,7 @@
 import pymysql
 import webreader
 import pandas as pd
-import os
+
 
 def insert_stock_info_from_quantking():
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
@@ -265,7 +265,7 @@ def check_is_existed(stock_code):
 if __name__ == "__main__":
     # insert_stock_info_from_quantking()
 
-    update_corp_code()
+    # update_corp_code()
 
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
@@ -296,6 +296,8 @@ if __name__ == "__main__":
                 pass
         i = i + 1
     """
+
+    print("되나?")
 
     # create_account('00001', '1000000')
     # buy_stock('00001', '20150101', ['005930'])
