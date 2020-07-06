@@ -12,6 +12,11 @@ import xml.etree.ElementTree as ET
 import json
 from pandas import json_normalize
 
+# pandas 출력 세팅
+pd.set_option('display.max_row', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+pd.set_option('display.max_colwidth', None)
 
 def get_stock_info_from_dart():
     """
@@ -49,11 +54,13 @@ def find_corp_num(stock_code):
         if country.findtext("stock_code") == stock_code:
             return country.findtext("corp_code")
 
-def get_financial_statements_dart(corp_code):
+def get_financial_statements_dart(corp_code, yyyy, report_code):
     """
     OPEN DART API를 통해 기업별 재무제표 정보 가져오기
     :param corp_code: 고유번호
-    :return:
+    :param yyyy: 사업연도
+    :param report_code: 보고서 코드
+    :return: 딕셔너리
     """
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
                            db='quant', charset='utf8')
@@ -66,25 +73,61 @@ def get_financial_statements_dart(corp_code):
     conn.commit()
     conn.close()
 
-    url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={}&corp_code={}&bsns_year={}&reprt_code={}&fs_div=CFS'.format(api_key, corp_code, '2018', '11013')
+    url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={}&corp_code={}&bsns_year={}&reprt_code={}&fs_div=CFS'.format(api_key, corp_code, yyyy, report_code)
 
     html = requests.get(url).text
     json_result = json.loads(html)
 
-    print(json_result)
+    # print(json_result)
 
-    df_financial_statement = json_normalize(json_result['list'])
+    df = json_normalize(json_result['list'])
 
-    pd.set_option('display.max_row', 500)
-    pd.set_option('display.max_columns', 500)
-    pd.set_option('display.width', 1000)
-    pd.set_option('display.max_colwidth', None)
+    # print(df)
 
-    # print(df_financial_statement.head(100))
+    # 필요 데이터만 추출
+    df = df[df['sj_div'].isin(['BS','IS','CIS','CF'])] # 재무상태표, 손익계산서, 포괄손익계산서, 현금흐름표
 
+    disclosure = {}
 
-    print(df_financial_statement.columns)
-    print(df_financial_statement[['reprt_code','bsns_year','corp_code','sj_nm','account_id','account_nm','thstrm_amount']])
+    # 유동자산
+    disclosure['current_assets'] = df.loc[(df['account_id'].isin(['ifrs_CurrentAssets', 'ifrs-full_CurrentAssets']))
+                                                    | df['account_nm'].isin(['유동자산']), 'thstrm_amount'].iloc[0]
+
+    # 자산총계
+    disclosure['assets'] = df.loc[(df['account_id'].isin(['ifrs_Assets', 'ifrs-full_Assets']))
+                                            | df['account_nm'].isin(['자산총계']), 'thstrm_amount'].iloc[0]
+
+    # 유동부채
+    disclosure['current_liabilities'] = df.loc[(df['account_id'].isin(['ifrs_CurrentLiabilities', 'ifrs-full_CurrentLiabilities']))
+                                                         | df['account_nm'].isin(['유동부채']), 'thstrm_amount'].iloc[0]
+
+    # 부채총계
+    disclosure['liabilities'] = df.loc[(df['account_id'].isin(['ifrs_Liabilities', 'ifrs-full_Liabilities']))
+                                                 | df['account_nm'].isin(['부채총계']), 'thstrm_amount'].iloc[0]
+
+    # 자본총계
+    disclosure['equity'] = df.loc[(df['account_id'].isin(['ifrs_Equity', 'ifrs-full_Equity']))
+                                            | df['account_nm'].isin(['자본총계']), 'thstrm_amount'].iloc[0]
+
+    # 매출액
+    disclosure['revenue'] = df.loc[(df['account_id'].isin(['ifrs_Revenue', 'ifrs-full_Revenue']))
+                                             | df['account_nm'].isin(['매출액']), 'thstrm_amount'].iloc[0]
+
+    # 영업이익
+    disclosure['operating_income_loss'] = df.loc[(df['account_id'].isin(['dart_OperatingIncomeLoss', 'dart-full_OperatingIncomeLoss']))
+                                                           | df['account_nm'].isin(['영업이익(손실)']), 'thstrm_amount'].iloc[0]
+
+    # 당기순이익
+    disclosure['profit_loss'] = df.loc[(df['account_id'].isin(['ifrs_ProfitLoss', 'ifrs-full_ProfitLoss']))
+                                                 | df['account_nm'].isin(['당기순이익(손실)']), 'thstrm_amount'].iloc[0]
+
+    # 단위 : 억 원
+    disclosure = {key : round(float(value)/100000000, 2) for key, value in disclosure.items()}
+
+    # print(disclosure)
+
+    return disclosure
+
 
 def get_financial_statements(code):
     # 인증값 추출
@@ -211,8 +254,8 @@ def get_stock_history(code, count):
     stock_history = []
     url = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count={}&requestType=0".format(code, count)
     html = requests.get(url).text
-    soup = BeautifulSoup(html, "html5lib")
-
+    # soup = BeautifulSoup(html, "html5lib")
+    soup = BeautifulSoup(html, "html.parser")
     data = soup.findAll('item')
 
     for row in data:
@@ -221,8 +264,6 @@ def get_stock_history(code, count):
         stock_history.append(daily_history)
 
     return stock_history
-
-
 
 def get_stock_detail(code):
     """
@@ -293,7 +334,9 @@ if __name__ == "__main__":
 
     # get_stock_info_from_dart()
 
-    get_financial_statements_dart('00126380')
+    # get_financial_statements_dart('00113410', '2019', '11011')
+    # get_financial_statements_dart('00126380', '2018', '11011')
+    # get_financial_statements_dart('00112378', '2017', '11012')
     # stock_history = get_stock_history('005930', 10)
     # print(stock_history)
 

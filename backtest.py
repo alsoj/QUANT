@@ -3,6 +3,14 @@ import webreader
 import pandas as pd
 
 
+# OPEN DART 파라미터
+DART_YEAR_LSIT = ['2015', '2016', '2017', '2018', '2019', '2020']
+DART_REPORT_LSIT = ['11013', '11012', '11014', '11011']
+# 1분기보고서 : 11013
+# 반기보고서 : 11012
+# 3분기보고서 : 11014
+# 사업보고서 : 11011
+
 def insert_stock_info_from_quantking():
     conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
                            db='quant', charset='utf8')
@@ -96,7 +104,29 @@ def insert_stock_history(stock_code, stock_history):
         # print(row)
         curs.execute(sql, (stock_code, row[0], row[1], row[2], row[3], row[4], row[5]))
 
-    print("{} ::: 종목 히스토리 INSERT 끝".format(str(stock_code)))
+    # print("{} ::: 종목 히스토리 INSERT 끝".format(str(stock_code)))
+
+    conn.commit()
+    conn.close()
+
+def insert_sotck_disclosure(stock_code, yyyy, report_code, disclosure):
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+    curs = conn.cursor()
+    sql = """INSERT INTO CORP_DISCLOSURE (stock_code, date, current_assets, assets, current_liabilities, liabilities, 
+            equity, revenue, operating_income_loss, profit_loss) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+
+    if report_code == '11013':
+        date = yyyy + '03'
+    elif report_code == '11012':
+        date = yyyy + '06'
+    elif report_code == '11014':
+        date = yyyy + '09'
+    elif report_code == '11011':
+        date = yyyy + '12'
+
+    curs.execute(sql, (stock_code, date, disclosure['current_assets'], disclosure['assets'], disclosure['current_liabilities'],
+                       disclosure['liabilities'], disclosure['equity'], disclosure['revenue'], disclosure['operating_income_loss'], disclosure['profit_loss']))
 
     conn.commit()
     conn.close()
@@ -262,21 +292,62 @@ def check_is_existed(stock_code):
     else:
         return False
 
+def select_all_corp_code():
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
+                           db='quant', charset='utf8')
+
+    # Connection 으로부터 Dictoionary Cursor 생성
+    curs = conn.cursor(pymysql.cursors.DictCursor)
+
+    sql = """select corp_code, stock_code from STOCK_INFO"""
+
+    # SQL문 실행
+    curs.execute(sql)
+    all_corp_code = curs.fetchall()
+    conn.close()
+
+    return all_corp_code
+
 if __name__ == "__main__":
     # insert_stock_info_from_quantking()
-
     # update_corp_code()
-
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
 
-    # all_stock_list = select_all_stock_info()
+    # 전체 재무 정보 입력 from OPEN DART
+    all_corp_code = select_all_corp_code()
+    total_count = len(all_corp_code)
+    print("전체 건수 ::: " + str(total_count))
+    i = 1
+
+    for stock in all_corp_code:
+        print("{}번째 종목 입력 중 ::: {}".format(i, stock['corp_code']))
+
+        for yyyy in DART_YEAR_LSIT:
+            for report_code in DART_REPORT_LSIT:
+                try:
+                    disclosure = webreader.get_financial_statements_dart(stock['corp_code'], yyyy, report_code)
+                    insert_sotck_disclosure(stock['stock_code'], yyyy, report_code, disclosure)
+                except:
+                    # print("{} | {} | {} ::: 재무제표 INSERT 오류발생".format(str(stock['corp_code']), yyyy, report_code))
+                    pass
+        i = i + 1
 
     """
+    # 전체 주가 정보 입력
+    all_stock_list = select_all_stock_info()
+    total_count = len(all_stock_list)
+    print("전체 건수 ::: " + str(total_count))
+    i = 1
+
     for stock in all_stock_list:
+        print("{}번째 종목 입력 중 ::: {}".format(i, stock['stock_code']))
+
         # 일별 주가 데이터 가져오기(1주 = 5일, 1년 = 260일, 10년 = 2600일)
         stock_history = webreader.get_stock_history(stock['stock_code'], 2600)
         insert_stock_history(stock['stock_code'], stock_history)
+
+        i = i + 1
     """
 
     """    
@@ -296,8 +367,6 @@ if __name__ == "__main__":
                 pass
         i = i + 1
     """
-
-    print("되나?")
 
     # create_account('00001', '1000000')
     # buy_stock('00001', '20150101', ['005930'])
