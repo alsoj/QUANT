@@ -11,9 +11,13 @@ DART_REPORT_LSIT = ['11013', '11012', '11014', '11011']
 # 3분기보고서 : 11014
 # 사업보고서 : 11011
 
+def connect_db():
+    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01', db='quant', charset='utf8')
+
+    return conn
+
 def insert_stock_info_from_quantking():
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
 
     curs = conn.cursor()
     insert_stock_info_sql = """
@@ -32,10 +36,9 @@ def insert_stock_info_from_quantking():
     conn.close()
 
 def update_corp_code():
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
-
+    conn = connect_db()
     curs = conn.cursor()
+
     stock_list = select_all_stock_info()
 
     update_stock_info_sql = """
@@ -55,10 +58,9 @@ def update_corp_code():
 
 
 def insert_stock_info(df_stock_code):
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
-
+    conn = connect_db()
     curs = conn.cursor()
+
     sql = """insert into STOCK_INFO(stock_code,stock_name,stock_type,use_yn)
              values (%s, %s, %s, %s)"""
 
@@ -76,11 +78,8 @@ def insert_stock_info(df_stock_code):
     conn.close()
 
 def select_all_stock_info():
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
-
-    # Connection 으로부터 Dictoionary Cursor 생성
-    curs = conn.cursor(pymysql.cursors.DictCursor)
+    conn = connect_db()
+    curs = conn.cursor(pymysql.cursors.DictCursor)  # Connection 으로부터 Dictoionary Cursor 생성
 
     sql = """select stock_code, stock_name
                from STOCK_INFO
@@ -94,9 +93,9 @@ def select_all_stock_info():
     return all_stock_list
 
 def insert_stock_history(stock_code, stock_history):
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
     curs = conn.cursor()
+
     sql = """insert into STOCK_HISTORY(stock_code,date,open,high,low,close,volume)
              values (%s, %s, %s, %s, %s, %s, %s)"""
 
@@ -110,9 +109,9 @@ def insert_stock_history(stock_code, stock_history):
     conn.close()
 
 def insert_sotck_disclosure(stock_code, yyyy, report_code, disclosure):
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
     curs = conn.cursor()
+
     sql = """INSERT INTO CORP_DISCLOSURE (stock_code, date, current_assets, assets, current_liabilities, liabilities, 
             equity, revenue, operating_income_loss, profit_loss) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
@@ -132,9 +131,9 @@ def insert_sotck_disclosure(stock_code, yyyy, report_code, disclosure):
     conn.close()
 
 def insert_stock_detail(stock_code, stock_detail):
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
     curs = conn.cursor()
+
     sql = """insert into STOCK_DETAIL(stock_code, date, detail_1, detail_2, detail_3, detail_4, detail_5, detail_6,
      detail_7, detail_8, detail_9, detail_10, detail_11, detail_12, detail_13, detail_14, detail_15, detail_16,
      detail_17, detail_18, detail_19, detail_20, detail_21, detail_22, detail_23, detail_24, detail_25, detail_26, 
@@ -163,9 +162,9 @@ def select_undervalued_stock(yyyymm, topN):
     :param topN:추출 종목 수
     :return: undervalued_stock_list
     """
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
     curs = conn.cursor()
+
     sql = """
           SELECT DISTINCT STOCK_CODE
             FROM STOCK_DETAIL
@@ -196,8 +195,7 @@ def create_account(port_no, asset):
     :param asset: 시작 자산
     :return:
     """
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
     curs = conn.cursor()
 
     insert_account_sql = """
@@ -218,8 +216,7 @@ def buy_stock(port_no, yyyymmdd, stock_list):
     :param stock_list: 매수대상 list
     :return:
     """
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
+    conn = connect_db()
     curs = conn.cursor()
 
     # 매수가능 예수금 가져오기
@@ -278,11 +275,9 @@ def buy_stock(port_no, yyyymmdd, stock_list):
 
 
 def check_is_existed(stock_code):
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
-
-    # Connection 으로부터 Dictoionary Cursor 생성
+    conn = connect_db()
     curs = conn.cursor()
+
     sql = """select count(*) from STOCK_DETAIL where stock_code = %s"""
     curs.execute(sql, (stock_code))
 
@@ -293,11 +288,8 @@ def check_is_existed(stock_code):
         return False
 
 def select_all_corp_code():
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
-
-    # Connection 으로부터 Dictoionary Cursor 생성
-    curs = conn.cursor(pymysql.cursors.DictCursor)
+    conn = connect_db()
+    curs = conn.cursor(pymysql.cursors.DictCursor)  # Connection 으로부터 Dictoionary Cursor 생성
 
     sql = """select corp_code, stock_code from STOCK_INFO"""
 
@@ -314,6 +306,7 @@ if __name__ == "__main__":
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
 
+    """
     # 전체 재무 정보 입력 from OPEN DART
     all_corp_code = select_all_corp_code()
     total_count = len(all_corp_code)
@@ -332,6 +325,7 @@ if __name__ == "__main__":
                     # print("{} | {} | {} ::: 재무제표 INSERT 오류발생".format(str(stock['corp_code']), yyyy, report_code))
                     pass
         i = i + 1
+    """
 
     """
     # 전체 주가 정보 입력
