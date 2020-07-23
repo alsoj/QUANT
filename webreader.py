@@ -11,7 +11,7 @@ from zipfile import ZipFile
 import xml.etree.ElementTree as ET
 import json
 from pandas import json_normalize
-
+import backtest
 # pandas 출력 세팅
 pd.set_option('display.max_row', 500)
 pd.set_option('display.max_columns', 500)
@@ -22,10 +22,9 @@ def get_stock_info_from_dart():
     """
     OPEN DART API를 활용하여 고유번호 데이터를 XML로 저장
     """
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01',
-                           db='quant', charset='utf8')
-
+    conn = backtest.connect_db()
     curs = conn.cursor()
+
     select_apikey_sql = """SELECT CODE_NM FROM CODE_INFO WHERE CODE_ID = 'API'"""
     curs.execute(select_apikey_sql)
     api_key = curs.fetchone()[0]
@@ -229,18 +228,18 @@ def get_stock_code():
     """
 
     url = 'http://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&orderStat=D'
-    df_code = pd.read_html(url, header=0)[0]
+    df_stock_code = pd.read_html(url, header=0)[0]
 
     # 종목코드가 6자리이기 때문에 6자리를 맞춰주기 위해 설정해줌
-    df_code.종목코드 = df_code.종목코드.map('{:06d}'.format)
+    df_stock_code.종목코드 = df_stock_code.종목코드.map('{:06d}'.format)
 
     # 필요한 컬럼만 남김(회사 명과 종목코드)
-    df_code = df_code[['회사명', '종목코드']]
+    df_stock_code = df_stock_code[['회사명', '종목코드']]
 
     # 한글로 된 컬럼명을 영어로 변경
-    df_code = df_code.rename(columns={'회사명': 'name', '종목코드': 'code'})
+    df_stock_code = df_stock_code.rename(columns={'회사명': 'name', '종목코드': 'code'})
 
-    return df_code
+    return df_stock_code
 
 # 주가 데이터 크롤링 from 네이버 금융
 def get_stock_history(code, count):

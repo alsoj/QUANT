@@ -67,7 +67,7 @@ def insert_stock_info(df_stock_code):
     print("종목 정보 INSERT 시작. 전체 건수" + str(len(df_stock_code)))
 
     for i, row in df_stock_code.iterrows():
-        curs.execute(sql, (row['code'], row['name'], '', 'Y'))
+        curs.execute(sql, (row['code'], row['name'], '', '1'))
 
         if (i % 100 == 0):
             print("{}번째 완료".format(i))
