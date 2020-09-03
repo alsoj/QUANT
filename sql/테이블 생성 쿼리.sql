@@ -64,6 +64,20 @@ CREATE TABLE `CORP_DISCLOSURE` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*********************
+4.포트폴리오 테이블 생성
+*********************/
+DROP TABLE `PORTFOLIO`;
+CREATE TABLE `PORTFOLIO` (
+	`PORT_NO` int(10) NOT NULL AUTO_INCREMENT COMMENT '포트폴리오 넘버',
+    `PORT_NAME` varchar(100) NOT NULL COMMENT '포트폴리오 이름',
+	`OPERATING_ASSETS` float NOT NULL COMMENT '운영 자산',
+    `START_YYMMDD` date NULL COMMENT '운영 시작일',
+	`END_YYMMDD` date NULL COMMENT '운영 종료일',
+	`REBALANCE_CYCLE` int NULL COMMENT '리밸런싱 주기',
+	PRIMARY KEY (`PORT_NO`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*********************
 4.계좌 테이블 생성
 *********************/
 DROP TABLE `ACCOUNT`;

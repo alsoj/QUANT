@@ -100,10 +100,7 @@ def insert_stock_history(stock_code, stock_history):
              values (%s, %s, %s, %s, %s, %s, %s)"""
 
     for row in stock_history:
-        # print(row)
         curs.execute(sql, (stock_code, row[0], row[1], row[2], row[3], row[4], row[5]))
-
-    # print("{} ::: 종목 히스토리 INSERT 끝".format(str(stock_code)))
 
     conn.commit()
     conn.close()
@@ -156,37 +153,7 @@ def insert_stock_detail(stock_code, stock_detail):
     conn.commit()
     conn.close()
 
-def select_undervalued_stock(yyyymm, topN):
-    """
-    :param yyyymm:기준연월
-    :param topN:추출 종목 수
-    :return: undervalued_stock_list
-    """
-    conn = connect_db()
-    curs = conn.cursor()
 
-    sql = """
-          SELECT DISTINCT STOCK_CODE
-            FROM STOCK_DETAIL
-           WHERE 1=1
-             AND DATE < %s
-             AND detail_2 > 0 # 영업이익
-             AND detail_22 > 10 # ROE
-             AND detail_24 < 100 # 부채비율
-             AND detail_31 > 3 # 배당수익률
-             AND detail_27 > 0 # PER
-             AND detail_27 < 10
-             AND detail_29 > 0 # PBR
-             AND detail_29 < 0.8
-           ORDER BY detail_27
-           """
-
-    # SQL문 실행
-    curs.execute(sql, (yyyymm))
-    undervalued_stock_list = curs.fetchall()
-    conn.close()
-
-    return undervalued_stock_list[:topN]
 
 def create_account(port_no, asset):
     """
@@ -207,6 +174,38 @@ def create_account(port_no, asset):
     curs.execute(insert_account_sql, (port_no, asset, asset, asset, asset))
     conn.commit()
     conn.close()
+
+def select_undervalued_stock(yyyymm, topN):
+    """
+    :param yyyymm:기준연월
+    :param topN:추출 종목 수
+    :return: undervalued_stock_list
+    """
+    conn = connect_db()
+    curs = conn.cursor()
+
+    sql = """
+          SELECT DISTINCT STOCK_CODE
+            FROM CORP_DISCLOSURE
+           WHERE 1=1
+             AND DATE < %s
+             AND OPERATING_INCOME_LOSS > 0 # 영업이익
+             AND detail_22 > 10 # ROE
+             AND CURRENT_ASSETS < 100 # 부채비율
+             AND detail_31 > 3 # 배당수익률
+             AND detail_27 > 0 # PER
+             AND detail_27 < 10
+             AND detail_29 > 0 # PBR
+             AND detail_29 < 0.8
+           ORDER BY detail_27
+           """
+
+    # SQL문 실행
+    curs.execute(sql, (yyyymm))
+    undervalued_stock_list = curs.fetchall()
+    conn.close()
+
+    return undervalued_stock_list[:topN]
 
 def buy_stock(port_no, yyyymmdd, stock_list):
     """
@@ -305,6 +304,15 @@ if __name__ == "__main__":
     # update_corp_code()
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
+
+    # 계좌 개설
+    create_account('00001', 1000000)
+
+    # 저평가주 LIST
+    undervalued_stock_list = select_undervalued_stock('201501', 10)
+
+    # 매수 함수
+    buy_stock('00001', '20150101', undervalued_stock_list)
 
     """
     # 전체 재무 정보 입력 from OPEN DART

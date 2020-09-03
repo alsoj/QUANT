@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 import json
 from pandas import json_normalize
 import backtest
+
 # pandas 출력 세팅
 pd.set_option('display.max_row', 500)
 pd.set_option('display.max_columns', 500)
