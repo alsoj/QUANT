@@ -12,9 +12,7 @@ DART_REPORT_LSIT = ['11013', '11012', '11014', '11011']
 # 사업보고서 : 11011
 
 def connect_db():
-    conn = pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01', db='quant', charset='utf8')
-
-    return conn
+    return pymysql.connect(host='localhost', user='quantadmin', password='quantadmin$01', db='quant', charset='utf8')
 
 def insert_stock_info_from_quantking():
     conn = connect_db()
@@ -153,28 +151,6 @@ def insert_stock_detail(stock_code, stock_detail):
     conn.commit()
     conn.close()
 
-
-
-def create_account(port_no, asset):
-    """
-    백테스트용 계좌 생성
-    :param port_no: 포트폴리오 번호
-    :param asset: 시작 자산
-    :return:
-    """
-    conn = connect_db()
-    curs = conn.cursor()
-
-    insert_account_sql = """
-        INSERT INTO ACCOUNT (PORT_NO, ASSET, DEPOSIT, EARNINGS, EARNINGS_RATE)  VALUES (%s, %s, %s, 0, 0)
-        ON DUPLICATE KEY UPDATE
-        ASSET = %s, DEPOSIT = %s, EARNINGS = 0, EARNINGS_RATE = 0    
-    """
-
-    curs.execute(insert_account_sql, (port_no, asset, asset, asset, asset))
-    conn.commit()
-    conn.close()
-
 def select_undervalued_stock(yyyymm, topN):
     """
     :param yyyymm:기준연월
@@ -304,9 +280,6 @@ if __name__ == "__main__":
     # update_corp_code()
     # df_stock_code = webreader.get_stock_code()
     # insertStockInfo(df_stock_code)
-
-    # 계좌 개설
-    create_account('00001', 1000000)
 
     # 저평가주 LIST
     undervalued_stock_list = select_undervalued_stock('201501', 10)
